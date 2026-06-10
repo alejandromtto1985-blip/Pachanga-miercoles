@@ -185,37 +185,32 @@ step="0.1"
 placeholder="Nivel">
 
 <label>Posición principal</label>
-
 <select id="pos1">
-
-<option>Portero</option>
-<option>Lateral Derecho</option>
-<option>Central</option>
-<option>Lateral Izquierdo</option>
-<option>Pivote</option>
-<option>Mediocentro</option>
-<option>Mediapunta</option>
-<option>Extremo Derecho</option>
-<option>Extremo Izquierdo</option>
-<option>Delantero</option>
-
+    <option>Lateral</option>
+    <option>Central</option>
+    <option>Medio Centro</option>
+    <option>Extremo</option>
+    <option>Delantero</option>
 </select>
 
 <label>Posición secundaria</label>
-
 <select id="pos2">
+    <option>Ninguna</option>
+    <option>Lateral</option>
+    <option>Central</option>
+    <option>Medio Centro</option>
+    <option>Extremo</option>
+    <option>Delantero</option>
+</select>
 
-<option>Portero</option>
-<option>Lateral Derecho</option>
-<option>Central</option>
-<option>Lateral Izquierdo</option>
-<option>Pivote</option>
-<option>Mediocentro</option>
-<option>Mediapunta</option>
-<option>Extremo Derecho</option>
-<option>Extremo Izquierdo</option>
-<option>Delantero</option>
-
+<label>Posición tercera</label>
+<select id="pos3">
+    <option>Ninguna</option>
+    <option>Lateral</option>
+    <option>Central</option>
+    <option>Medio Centro</option>
+    <option>Extremo</option>
+    <option>Delantero</option>
 </select>
 
 <button
@@ -273,6 +268,9 @@ function agregarJugador(){
     const pos2 =
     document.getElementById("pos2").value;
 
+    const pos3 =
+    document.getElementById("pos3").value;
+
     if(!nombre || !nivel){
         alert("Introduce nombre y nivel");
         return;
@@ -284,6 +282,7 @@ function agregarJugador(){
         nivel,
         pos1,
         pos2,
+        pos3,
         presente:true
     });
 
