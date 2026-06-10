@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Equipos</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    padding:15px;
+    font-family:Arial,sans-serif;
+    background:#f3f3f3;
+}
+
+h1,h2,h3{
+    text-align:center;
+}
+
+.card{
+    background:white;
+    border-radius:12px;
+    padding:15px;
+    margin-bottom:15px;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+
+input,
+select{
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.btnAdd{
+    background:#28a745;
+    color:white;
+}
+
+.btnGenerate{
+    background:#007bff;
+    color:white;
+}
+
+.btnDelete{
+    background:#dc3545;
+    color:white;
+    margin-top:5px;
+}
+
+.player{
+    padding:10px;
+    border-bottom:1px solid #ddd;
+}
+
+.player:last-child{
+    border-bottom:none;
+}
+
+.playerRow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.playerInfo{
+    flex:1;
+}
+
+.teams{
+    display:flex;
+    flex-wrap:wrap;
+    gap:20px;
+}
+
+.team{
+    flex:1;
+    min-width:350px;
+}
+
+.teamHeader{
+    color:white;
+    text-align:center;
+    padding:10px;
+    border-radius:8px;
+    font-weight:bold;
+}
+
+.red{
+    background:#c62828;
+}
+
+.yellow{
+    background:#d4a017;
+    color:black;
+}
+
+.field{
+    position:relative;
+    height:700px;
+    background:#2f8f2f;
+    border:3px solid white;
+    border-radius:12px;
+    overflow:hidden;
+    margin-top:10px;
+}
+
+.field:before{
+    content:"";
+    position:absolute;
+    left:0;
+    right:0;
+    top:50%;
+    border-top:2px solid white;
+}
+
+.field:after{
+    content:"";
+    position:absolute;
+    width:120px;
+    height:120px;
+    border:2px solid white;
+    border-radius:50%;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+}
+
+.playerDot{
+    position:absolute;
+    transform:translate(-50%,-50%);
+    background:white;
+    border-radius:15px;
+    padding:4px 8px;
+    font-size:12px;
+    font-weight:bold;
+    white-space:nowrap;
+    box-shadow:0 1px 4px rgba(0,0,0,.4);
+}
+
+.stats{
+    text-align:center;
+    font-size:18px;
+    font-weight:bold;
+    margin-top:10px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>⚽ Generador de Equipos</h1>
+
+<div class="card">
+
+<h3>Añadir Jugador</h3>
+
+<input
+id="nombre"
+placeholder="Nombre">
+
+<input
+id="nivel"
+type="number"
+min="1"
+max="5"
+step="0.1"
+placeholder="Nivel">
+
+<label>Posición principal</label>
+
+<select id="pos1">
+
+<option>Portero</option>
+<option>Lateral Derecho</option>
+<option>Central</option>
+<option>Lateral Izquierdo</option>
+<option>Pivote</option>
+<option>Mediocentro</option>
+<option>Mediapunta</option>
+<option>Extremo Derecho</option>
+<option>Extremo Izquierdo</option>
+<option>Delantero</option>
+
+</select>
+
+<label>Posición secundaria</label>
+
+<select id="pos2">
+
+<option>Portero</option>
+<option>Lateral Derecho</option>
+<option>Central</option>
+<option>Lateral Izquierdo</option>
+<option>Pivote</option>
+<option>Mediocentro</option>
+<option>Mediapunta</option>
+<option>Extremo Derecho</option>
+<option>Extremo Izquierdo</option>
+<option>Delantero</option>
+
+</select>
+
+<button
+class="btnAdd"
+onclick="agregarJugador()">
+
+Añadir Jugador
+
+</button>
+
+</div>
+
+<div class="card">
+
+<h3>Convocados</h3>
+
+<div id="listaJugadores"></div>
+
+<button
+class="btnGenerate"
+onclick="crearEquipos()">
+
+⚽ Generar Equipos
+
+</button>
+
+</div>
+
+<div id="resultado"></div>
+<script>
+
+let jugadores =
+JSON.parse(localStorage.getItem("jugadores")) || [];
+
+function guardarJugadores(){
+    localStorage.setItem(
+        "jugadores",
+        JSON.stringify(jugadores)
+    );
+}
+
+function agregarJugador(){
+
+    const nombre =
+    document.getElementById("nombre").value.trim();
+
+    const nivel =
+    parseFloat(
+        document.getElementById("nivel").value
+    );
+
+    const pos1 =
+    document.getElementById("pos1").value;
+
+    const pos2 =
+    document.getElementById("pos2").value;
+
+    if(!nombre || !nivel){
+        alert("Introduce nombre y nivel");
+        return;
+    }
+
+    jugadores.push({
+        id: Date.now(),
+        nombre,
+        nivel,
+        pos1,
+        pos2,
+        presente:true
+    });
+
+    guardarJugadores();
+    mostrarJugadores();
+
+    document.getElementById("nombre").value="";
+    document.getElementById("nivel").value="";
+}
+
+function borrarJugador(id){
+
+    jugadores =
+    jugadores.filter(j => j.id !== id);
+
+    guardarJugadores();
+    mostrarJugadores();
+}
+
+function cambiarAsistencia(id){
+
+    const jugador =
+    jugadores.find(j => j.id === id);
+
+    jugador.presente =
+    !jugador.presente;
+
+    guardarJugadores();
+}
+
+function mostrarJugadores(){
+
+    let html="";
+
+    jugadores.forEach(j=>{
+
+        html += `
+
+        <div class="player">
+
+            <div class="playerRow">
+
+                <input
+                    type="checkbox"
+                    ${j.presente ? "checked" : ""}
+                    onchange="cambiarAsistencia(${j.id})">
+
+                <div class="playerInfo">
+
+                    <b>${j.nombre}</b>
+
+                    (${j.nivel})
+
+                    <br>
+
+                    ${j.pos1}
+                    /
+                    ${j.pos2}
+
+                </div>
+
+            </div>
+
+            <button
+            class="btnDelete"
+            onclick="borrarJugador(${j.id})">
+
+            Borrar
+
+            </button>
+
+        </div>
+
+        `;
+    });
+
+    document.getElementById(
+        "listaJugadores"
+    ).innerHTML = html;
+}
+
+mostrarJugadores();
+function crearEquipos(){
+
+    let presentes =
+    jugadores.filter(j => j.presente);
+
+    if(presentes.length < 10){
+        alert("Muy pocos jugadores");
+        return;
+    }
+
+    let total = presentes.length;
+
+    let tamRojo =
+    Math.floor(total/2);
+
+    let tamAmarillo =
+    total - tamRojo;
+
+    presentes.sort(
+        (a,b)=>b.nivel-a.nivel
+    );
+
+    let rojo=[];
+    let amarillo=[];
+
+    let puntosRojo=0;
+    let puntosAmarillo=0;
+
+    presentes.forEach(j=>{
+
+        if(
+            rojo.length < tamRojo &&
+            (
+                puntosRojo <= puntosAmarillo ||
+                amarillo.length >= tamAmarillo
+            )
+        ){
+
+            rojo.push(j);
+            puntosRojo+=j.nivel;
+
+        }else{
+
+            amarillo.push(j);
+            puntosAmarillo+=j.nivel;
+
+        }
+
+    });
+
+    asignarPortero(rojo);
+    asignarPortero(amarillo);
+
+    pintarResultado(
+        rojo,
+        amarillo,
+        puntosRojo,
+        puntosAmarillo
+    );
+}
+
+function asignarPortero(equipo){
+
+    let portero =
+    equipo.find(j =>
+        j.pos1==="Portero" ||
+        j.pos2==="Portero"
+    );
+
+    if(portero){
+        portero.esPortero=true;
+        return;
+    }
+
+    let aleatorio =
+    Math.floor(
+        Math.random()*equipo.length
+    );
+
+    equipo[aleatorio].esPortero=true;
+}
+
+function obtenerPosicion(j){
+
+    if(j.esPortero){
+        return [50,92];
+    }
+
+    const mapa = {
+
+        "Lateral Derecho":[82,78],
+        "Central":[50,78],
+        "Lateral Izquierdo":[18,78],
+
+        "Pivote":[50,62],
+
+        "Mediocentro":[35,48],
+
+        "Mediapunta":[50,35],
+
+        "Extremo Derecho":[82,20],
+
+        "Extremo Izquierdo":[18,20],
+
+        "Delantero":[50,10]
+
+    };
+
+    return mapa[j.pos1] || [50,50];
+}
+
+function dibujarCampo(equipo){
+
+    let html =
+    '<div class="field">';
+
+    equipo.forEach(j=>{
+
+        let pos =
+        obtenerPosicion(j);
+
+        html += `
+        <div
+        class="playerDot"
+        style="
+        left:${pos[0]}%;
+        top:${pos[1]}%;
+        ">
+            ${j.nombre}
+        </div>
+        `;
+    });
+
+    html += '</div>';
+
+    return html;
+}
+
+function pintarResultado(
+    rojo,
+    amarillo,
+    puntosRojo,
+    puntosAmarillo
+){
+
+    let diferencia =
+    Math.abs(
+        puntosRojo-puntosAmarillo
+    ).toFixed(1);
+
+    document.getElementById(
+        "resultado"
+    ).innerHTML = `
+
+    <div class="stats">
+
+        🟥 Equipo Rojo:
+        ${puntosRojo.toFixed(1)}
+
+        |
+
+        🟨 Equipo Amarillo:
+        ${puntosAmarillo.toFixed(1)}
+
+        <br><br>
+
+        Diferencia:
+        ${diferencia}
+
+    </div>
+
+    <div class="teams">
+
+        <div class="team">
+
+            <div class="teamHeader red">
+                EQUIPO ROJO
+            </div>
+
+            ${dibujarCampo(rojo)}
+
+        </div>
+
+        <div class="team">
+
+            <div class="teamHeader yellow">
+                EQUIPO AMARILLO
+            </div>
+
+            ${dibujarCampo(amarillo)}
+
+        </div>
+
+    </div>
+
+    `;
+}
+
+</script>
+
+</body>
+</html>
