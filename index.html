@@ -474,15 +474,33 @@ function coincide(jugador, rol){
     );
 }
 
+function puntuacionPosicion(jugador, rol){
+
+    const mapa = {
+        LAT:"Lateral",
+        CEN:"Central",
+        MED:"Medio Centro",
+        EXT:"Extremo",
+        DEL:"Delantero"
+    };
+
+    const posicion = mapa[rol];
+
+    if(jugador.pos1 === posicion) return 100;
+    if(jugador.pos2 === posicion) return 50;
+    if(jugador.pos3 === posicion) return 20;
+
+    return -1;
+}
+
 function asignarRoles(equipo){
 
-    let disponibles =
-    [...equipo];
+    let disponibles = [...equipo];
 
     let formacion =
     obtenerFormacion(equipo.length);
 
-    let resultado=[];
+    let resultado = [];
 
     formacion.forEach(rol=>{
 
@@ -497,7 +515,8 @@ function asignarRoles(equipo){
 
                 resultado.push({
                     ...por,
-                    rolCampo:"POR"
+                    rolCampo:"POR",
+                    calidadPosicion:"🟢"
                 });
 
                 disponibles =
@@ -509,27 +528,50 @@ function asignarRoles(equipo){
             return;
         }
 
-        let jugador =
-        disponibles.find(
-            j=>coincide(j,rol)
-        );
+        let mejorJugador = null;
+        let mejorPuntuacion = -1;
 
-     if(!jugador){
-    return;
-}
+        disponibles.forEach(j=>{
 
-        if(jugador){
+            let puntos =
+            puntuacionPosicion(j,rol);
 
-            resultado.push({
-                ...jugador,
-                rolCampo:rol
-            });
+            if(
+                puntos > mejorPuntuacion
+            ){
+                mejorPuntuacion = puntos;
+                mejorJugador = j;
+            }
 
-            disponibles =
-            disponibles.filter(
-                j=>j.id!==jugador.id
-            );
+        });
+
+        if(
+            !mejorJugador ||
+            mejorPuntuacion < 0
+        ){
+            return;
         }
+
+        let icono="🟢";
+
+        if(mejorPuntuacion===50){
+            icono="🟡";
+        }
+
+        if(mejorPuntuacion===20){
+            icono="🟠";
+        }
+
+        resultado.push({
+            ...mejorJugador,
+            rolCampo:rol,
+            calidadPosicion:icono
+        });
+
+        disponibles =
+        disponibles.filter(
+            j=>j.id!==mejorJugador.id
+        );
 
     });
 
@@ -537,14 +579,14 @@ function asignarRoles(equipo){
 
         resultado.push({
             ...j,
-            rolCampo:"BAN"
+            rolCampo:"BAN",
+            calidadPosicion:"❌"
         });
 
     });
 
     return resultado;
 }
-
 function dibujarCampo(equipo){
 
     equipo =
@@ -630,7 +672,7 @@ function dibujarCampo(equipo){
         left:${p[0]}%;
         top:${p[1]}%;
         ">
-            ${j.nombre}
+            ${j.nombre} ${j.calidadPosicion || ""}
         </div>
         `;
     });
