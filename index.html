@@ -368,20 +368,12 @@ mostrarJugadores();
 function crearEquipos(){
 
     let presentes =
-    jugadores.filter(j => j.presente);
+    jugadores.filter(j=>j.presente);
 
     if(presentes.length < 10){
         alert("Muy pocos jugadores");
         return;
     }
-
-    let total = presentes.length;
-
-    let tamRojo =
-    Math.floor(total/2);
-
-    let tamAmarillo =
-    total - tamRojo;
 
     presentes.sort(
         (a,b)=>b.nivel-a.nivel
@@ -396,21 +388,13 @@ function crearEquipos(){
     presentes.forEach(j=>{
 
         if(
-            rojo.length < tamRojo &&
-            (
-                puntosRojo <= puntosAmarillo ||
-                amarillo.length >= tamAmarillo
-            )
+            puntosRojo <= puntosAmarillo
         ){
-
-            rojo.push(j);
-            puntosRojo+=j.nivel;
-
+            rojo.push({...j});
+            puntosRojo += j.nivel;
         }else{
-
-            amarillo.push(j);
-            puntosAmarillo+=j.nivel;
-
+            amarillo.push({...j});
+            puntosAmarillo += j.nivel;
         }
 
     });
@@ -431,11 +415,12 @@ function asignarPortero(equipo){
     let portero =
     equipo.find(j =>
         j.pos1==="Portero" ||
-        j.pos2==="Portero"
+        j.pos2==="Portero" ||
+        j.pos3==="Portero"
     );
 
     if(portero){
-        portero.esPortero=true;
+        portero.rolCampo="POR";
         return;
     }
 
@@ -444,65 +429,218 @@ function asignarPortero(equipo){
         Math.random()*equipo.length
     );
 
-    equipo[aleatorio].esPortero=true;
+    equipo[aleatorio].rolCampo="POR";
 }
 
-function obtenerPosicion(j){
+function obtenerFormacion(num){
 
-    if(j.esPortero){
-        return [50,92];
+    if(num >= 12){
+
+        return [
+            "POR",
+            "LAT","CEN","CEN","LAT",
+            "MED","MED","MED",
+            "EXT","EXT",
+            "DEL","DEL"
+        ];
+
     }
 
+    return [
+        "POR",
+        "LAT","CEN","CEN","LAT",
+        "MED","MED","MED",
+        "EXT","EXT",
+        "DEL"
+    ];
+}
+
+function coincide(jugador, rol){
+
     const mapa = {
-
-        "Lateral Derecho":[82,78],
-        "Central":[50,78],
-        "Lateral Izquierdo":[18,78],
-
-        "Pivote":[50,62],
-
-        "Mediocentro":[35,48],
-
-        "Mediapunta":[50,35],
-
-        "Extremo Derecho":[82,20],
-
-        "Extremo Izquierdo":[18,20],
-
-        "Delantero":[50,10]
-
+        "LAT":"Lateral",
+        "CEN":"Central",
+        "MED":"Medio Centro",
+        "EXT":"Extremo",
+        "DEL":"Delantero"
     };
 
-    return mapa[j.pos1] || [50,50];
+    let posicion = mapa[rol];
+
+    return (
+        jugador.pos1===posicion ||
+        jugador.pos2===posicion ||
+        jugador.pos3===posicion
+    );
+}
+
+function asignarRoles(equipo){
+
+    let disponibles =
+    [...equipo];
+
+    let formacion =
+    obtenerFormacion(equipo.length);
+
+    let resultado=[];
+
+    formacion.forEach(rol=>{
+
+        if(rol==="POR"){
+
+            let por =
+            disponibles.find(
+                j=>j.rolCampo==="POR"
+            );
+
+            if(por){
+
+                resultado.push({
+                    ...por,
+                    rolCampo:"POR"
+                });
+
+                disponibles =
+                disponibles.filter(
+                    j=>j.id!==por.id
+                );
+            }
+
+            return;
+        }
+
+        let jugador =
+        disponibles.find(
+            j=>coincide(j,rol)
+        );
+
+        if(!jugador){
+
+            jugador =
+            disponibles[0];
+        }
+
+        if(jugador){
+
+            resultado.push({
+                ...jugador,
+                rolCampo:rol
+            });
+
+            disponibles =
+            disponibles.filter(
+                j=>j.id!==jugador.id
+            );
+        }
+
+    });
+
+    disponibles.forEach(j=>{
+
+        resultado.push({
+            ...j,
+            rolCampo:"BAN"
+        });
+
+    });
+
+    return resultado;
 }
 
 function dibujarCampo(equipo){
+
+    equipo =
+    asignarRoles(equipo);
+
+    const posiciones = {
+
+        "POR":[[50,92]],
+
+        "LAT":[
+            [18,75],
+            [82,75]
+        ],
+
+        "CEN":[
+            [40,75],
+            [60,75]
+        ],
+
+        "MED":[
+            [30,50],
+            [50,45],
+            [70,50]
+        ],
+
+        "EXT":[
+            [18,22],
+            [82,22]
+        ],
+
+        "DEL":[
+            [50,10],
+            [38,10]
+        ],
+
+        "BAN":[
+            [10,96],
+            [25,96],
+            [40,96]
+        ]
+    };
+
+    let usados = {
+        POR:0,
+        LAT:0,
+        CEN:0,
+        MED:0,
+        EXT:0,
+        DEL:0,
+        BAN:0
+    };
 
     let html =
     '<div class="field">';
 
     equipo.forEach(j=>{
 
-        let pos =
-        obtenerPosicion(j);
+        let rol =
+        j.rolCampo;
+
+        let indice =
+        usados[rol] || 0;
+
+        let coords =
+        posiciones[rol];
+
+        if(
+            indice >= coords.length
+        ){
+            indice =
+            coords.length-1;
+        }
+
+        usados[rol]++;
+
+        let p =
+        coords[indice];
 
         html += `
         <div
         class="playerDot"
         style="
-        left:${pos[0]}%;
-        top:${pos[1]}%;
+        left:${p[0]}%;
+        top:${p[1]}%;
         ">
             ${j.nombre}
         </div>
         `;
     });
 
-    html += '</div>';
+    html += "</div>";
 
     return html;
 }
-
 function pintarResultado(
     rojo,
     amarillo,
