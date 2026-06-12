@@ -240,20 +240,65 @@ onclick="crearEquipos()">
 </div>
 
 <div id="resultado"></div>
-<script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-let jugadores =
-JSON.parse(localStorage.getItem("jugadores")) || [];
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDoc,
+  doc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-function guardarJugadores(){
-    localStorage.setItem(
-        "jugadores",
-        JSON.stringify(jugadores)
+const firebaseConfig = {
+  apiKey: "AIzaSyCeqZC6U-6Ci7-Lg-TwGxM504FXfwWxvRU",
+  authDomain: "pachanga-miercoles-e2208.firebaseapp.com",
+  projectId: "pachanga-miercoles-e2208",
+  storageBucket: "pachanga-miercoles-e2208.firebasestorage.app",
+  messagingSenderId: "880358366371",
+  appId: "1:880358366371:web:dccd6688e84cd9137c3316"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let jugadores = [];
+    async function cargarJugadores(){
+
+    const snapshot =
+    await getDocs(
+        collection(db,"jugadores")
     );
+
+    jugadores = [];
+
+    snapshot.forEach(docu=>{
+
+        jugadores.push({
+            firebaseId: docu.id,
+            ...docu.data()
+        });
+
+    });
+
+    mostrarJugadores();
 }
 
-function agregarJugador(){
+async function guardarJugadorFirebase(jugador){
 
+    await addDoc(
+        collection(db,"jugadores"),
+        jugador
+    );
+
+    await cargarJugadores();
+}
+
+
+
+async function agregarJugador(){
     const nombre =
     document.getElementById("nombre").value.trim();
 
@@ -276,30 +321,40 @@ function agregarJugador(){
         return;
     }
 
-    jugadores.push({
-        id: Date.now(),
-        nombre,
-        nivel,
-        pos1,
-        pos2,
-        pos3,
-        presente:true
-    });
+ await guardarJugadorFirebase({
 
-    guardarJugadores();
-    mostrarJugadores();
+    id: Date.now(),
+    nombre,
+    nivel,
+    pos1,
+    pos2,
+    pos3,
+    presente:true
+
+});
 
     document.getElementById("nombre").value="";
     document.getElementById("nivel").value="";
 }
 
-function borrarJugador(id){
+async function borrarJugador(id){
 
-    jugadores =
-    jugadores.filter(j => j.id !== id);
+    const jugador =
+    jugadores.find(
+        j=>j.id===id
+    );
 
-    guardarJugadores();
-    mostrarJugadores();
+    if(!jugador) return;
+
+    await deleteDoc(
+        doc(
+            db,
+            "jugadores",
+            jugador.firebaseId
+        )
+    );
+
+    await cargarJugadores();
 }
 
 function cambiarAsistencia(id){
@@ -364,7 +419,7 @@ function mostrarJugadores(){
     ).innerHTML = html;
 }
 
-mostrarJugadores();
+cargarJugadores();
 function crearEquipos(){
 
     let presentes =
