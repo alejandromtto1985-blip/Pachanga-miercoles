@@ -1,4 +1,4 @@
-<!DOCTYPE html><!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="es">
 <head>
@@ -365,46 +365,155 @@ function mostrarJugadores(){
 }
 
 mostrarJugadores();
-function crearEquipos(){
+    function evaluarEquipo(equipo, puntosEquipo){
 
-    let presentes =
-    jugadores.filter(j=>j.presente);
+    let alineacion =
+    asignarRoles(equipo);
 
-    if(presentes.length < 10){
-        alert("Muy pocos jugadores");
-        return;
-    }
+    let puntuacion = 0;
 
-    presentes.sort(
-        (a,b)=>b.nivel-a.nivel
-    );
+    alineacion.forEach(j=>{
 
-    let rojo=[];
-    let amarillo=[];
+        if(j.calidadPosicion==="🟢"){
+            puntuacion += 100;
+        }
 
-    let puntosRojo=0;
-    let puntosAmarillo=0;
+        if(j.calidadPosicion==="🟡"){
+            puntuacion += 50;
+        }
 
-    presentes.forEach(j=>{
+        if(j.calidadPosicion==="🟠"){
+            puntuacion += 20;
+        }
 
-        if(
-            puntosRojo <= puntosAmarillo
-        ){
-            rojo.push({...j});
-            puntosRojo += j.nivel;
-        }else{
-            amarillo.push({...j});
-            puntosAmarillo += j.nivel;
+        if(j.calidadPosicion==="❌"){
+            puntuacion -= 200;
         }
 
     });
 
-    asignarPortero(rojo);
-    asignarPortero(amarillo);
+    return {
+        puntuacion,
+        puntosEquipo
+    };
+}
+function crearEquipos(){
+
+    let presentes =
+    jugadores.filter(
+        j=>j.presente
+    );
+
+    if(presentes.length < 22){
+
+        alert(
+            "Se necesitan al menos 22 jugadores"
+        );
+
+        return;
+    }
+
+    let mejorRojo = null;
+    let mejorAmarillo = null;
+
+    let mejorPuntuacion =
+    -999999;
+
+    for(
+        let intento=0;
+        intento<2000;
+        intento++
+    ){
+
+        let mezcla =
+        [...presentes];
+
+        mezcla.sort(
+            ()=>Math.random()-0.5
+        );
+
+        let mitad =
+        Math.floor(
+            mezcla.length/2
+        );
+
+        let rojo =
+        mezcla.slice(0,mitad)
+        .map(j=>({...j}));
+
+        let amarillo =
+        mezcla.slice(mitad)
+        .map(j=>({...j}));
+
+        asignarPortero(rojo);
+        asignarPortero(amarillo);
+
+        let puntosRojo =
+        rojo.reduce(
+            (s,j)=>s+j.nivel,
+            0
+        );
+
+        let puntosAmarillo =
+        amarillo.reduce(
+            (s,j)=>s+j.nivel,
+            0
+        );
+
+        let valorRojo =
+        evaluarEquipo(
+            rojo,
+            puntosRojo
+        );
+
+        let valorAmarillo =
+        evaluarEquipo(
+            amarillo,
+            puntosAmarillo
+        );
+
+        let diferencia =
+        Math.abs(
+            puntosRojo -
+            puntosAmarillo
+        );
+
+        let notaFinal =
+            valorRojo.puntuacion +
+            valorAmarillo.puntuacion -
+            (diferencia * 80);
+
+        if(
+            notaFinal >
+            mejorPuntuacion
+        ){
+
+            mejorPuntuacion =
+            notaFinal;
+
+            mejorRojo = rojo;
+
+            mejorAmarillo =
+            amarillo;
+        }
+
+    }
+
+    let puntosRojo =
+    mejorRojo.reduce(
+        (s,j)=>s+j.nivel,
+        0
+    );
+
+    let puntosAmarillo =
+    mejorAmarillo.reduce(
+        (s,j)=>s+j.nivel,
+        0
+    );
 
     pintarResultado(
-        rojo,
-        amarillo,
+        mejorRojo,
+        mejorAmarillo,
         puntosRojo,
         puntosAmarillo
     );
